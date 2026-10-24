@@ -7,8 +7,9 @@
         Title="AvaloniaDetekceZnacek">
 
     <DockPanel>
-        <Button DockPanel.Dock="Top" Margin="8" HorizontalAlignment="Center"
-                Content="Otevřít obrázek…" Click="OpenButton_Click" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button Margin="8" Content="Otevřít obrázek…" Click="OpenButton_Click" />
+        </StackPanel>
         <Border Background="#202020" Margin="4">
             <Image x:Name="ResultImage" Stretch="Uniform" />
         </Border>

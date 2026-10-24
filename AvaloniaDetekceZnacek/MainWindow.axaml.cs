@@ -1,4 +1,3 @@
-using System;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
@@ -23,11 +22,10 @@ public partial class MainWindow : Window
         });
 
         if (files.Count == 0)
-        {
             return;
-        }
 
         await using var stream = await files[0].OpenReadAsync();
-        ResultImage.Source = new Bitmap(stream);
+        using var bitmap = new Bitmap(stream);
+        ResultImage.Source = ImageProcessing.DetectSigns(bitmap);
     }
 }
