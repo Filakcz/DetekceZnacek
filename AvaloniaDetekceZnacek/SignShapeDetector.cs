@@ -75,7 +75,8 @@ internal static class SignShapeDetector
 
         return pixels;
     }
-
+    
+    // https://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain#Python
     private static List<Point> ConvexHull(List<int> pixels, bool[] mask, int width, int height)
     {
         var points = new List<Point>();

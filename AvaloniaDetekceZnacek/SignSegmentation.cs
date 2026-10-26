@@ -4,7 +4,7 @@ namespace AvaloniaDetekceZnacek;
 
 internal static class SignSegmentation
 {
-    public static bool[] CreateMask(byte[] pixels, int width, int height)
+    public static bool[] CreateRawMask(byte[] pixels, int width, int height)
     {
         var mask = new bool[width * height];
         for (var pixel = 0; pixel < mask.Length; pixel++)
@@ -29,12 +29,17 @@ internal static class SignSegmentation
             mask[pixel] = max > 0.25f && saturation > 0.4f && (isRed || isBlue || isYellow);
         }
 
+        return mask;
+    }
+
+    public static bool[] CreateCleanMask(bool[] mask, int width, int height)
+    {
         mask = Erode(mask, width, height);
         mask = Dilate(mask, width, height);
         mask = Dilate(mask, width, height);
         return Erode(mask, width, height);
-        // return mask;
     }
+    
 
     private static float GetHue(float red, float green, float blue, float max, float delta)
     {
@@ -85,7 +90,7 @@ internal static class SignSegmentation
                     for (int dx = -1; dx <= 1; dx++)
                     {
                         var pixel = mask[(y + dy) * width + x + dx];
-                        if (erode && !pixel || !erode && pixel)
+                        if (pixel != erode)
                         {
                             value = !erode;
                             break;

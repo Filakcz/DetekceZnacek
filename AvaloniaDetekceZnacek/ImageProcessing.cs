@@ -8,21 +8,30 @@ namespace AvaloniaDetekceZnacek;
 
 internal static class ImageProcessing
 {
-    public static WriteableBitmap DetectSigns(Bitmap image)
+    // fakt musim udelat slozku na objekty
+    // DetectionStages
+    // Point
+    internal sealed record DetectionStages(
+            Bitmap Original,
+            Bitmap RawMask,
+            Bitmap CleanMask,
+            Bitmap Final);
+
+    public static DetectionStages Process(Bitmap image)
     {
         int width = image.PixelSize.Width;
         int height = image.PixelSize.Height;
         byte[] pixels = ReadPixels(image, width, height);
-        bool[] mask = SignSegmentation.CreateMask(pixels, width, height);
-        var outlines = SignShapeDetector.FindOutlines(mask, width, height);
-        WriteableBitmap result = CreateBitmap(image, width, height);
 
-        using var framebuffer = result.Lock();
-        foreach (var outline in outlines)
-        {
-            DrawOutline(framebuffer, outline);
-        }
-        return result;
+        bool[] rawMask = SignSegmentation.CreateRawMask(pixels, width, height);
+        bool[] cleanMask = SignSegmentation.CreateCleanMask(rawMask, width, height);
+        var outlines = SignShapeDetector.FindOutlines(cleanMask, width, height);
+
+        return new DetectionStages(
+                CreateBitmapCopy(image, width, height),
+                CreateMaskBitmap(rawMask, width, height),
+                CreateMaskBitmap(cleanMask, width, height),
+                CreateOutlinedBitmap(image, outlines));
     }
 
     private static byte[] ReadPixels(Bitmap image, int width, int height)
@@ -35,7 +44,52 @@ internal static class ImageProcessing
         return pixels;
     }
 
-    private static WriteableBitmap CreateBitmap(Bitmap image, int width, int height)
+    private static WriteableBitmap CreateMaskBitmap(bool[] mask, int width, int height)
+    {
+        var bitmap = new WriteableBitmap(
+            new PixelSize(width, height), new Vector(96, 96), PixelFormats.Bgra8888, AlphaFormat.Premul);
+        using var framebuffer = bitmap.Lock();
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                if (mask[y * width + x])
+                {
+                    SetPixel(framebuffer, x, y, 255, 255, 255, 255);
+                }
+                else
+                {
+                    SetPixel(framebuffer, x, y, 0, 0, 0, 255);
+                }
+            }
+        }
+
+        return bitmap;
+    }
+
+    private static WriteableBitmap CreateOutlinedBitmap(Bitmap image, List<List<SignShapeDetector.Point>> outlines)
+    {
+        int width = image.PixelSize.Width;
+        int height = image.PixelSize.Height;
+
+        var bitmap = CreateBitmapCopy(image, width, height);
+
+        using var framebuffer = bitmap.Lock();
+
+        foreach (var outline in outlines)
+        {
+            for (int index = 0; index < outline.Count; index++)
+            {
+                var start = outline[index];
+                var end = outline[(index + 1) % outline.Count];
+                DrawLine(framebuffer, start.X, start.Y, end.X, end.Y);
+            }
+        }
+        return bitmap;
+    }
+
+    private static WriteableBitmap CreateBitmapCopy(Bitmap image, int width, int height)
     {
         var bitmap = new WriteableBitmap(
             new PixelSize(width, height), new Vector(96, 96), PixelFormats.Bgra8888, AlphaFormat.Premul);
@@ -45,15 +99,6 @@ internal static class ImageProcessing
         return bitmap;
     }
 
-    private static void DrawOutline(ILockedFramebuffer framebuffer, List<SignShapeDetector.Point> outline)
-    {
-        for (int index = 0; index < outline.Count; index++)
-        {
-            var start = outline[index];
-            var end = outline[(index + 1) % outline.Count];
-            DrawLine(framebuffer, start.X, start.Y, end.X, end.Y);
-        }
-    }
 
     // https://en.wikipedia.org/wiki/Bresenham's_line_algorithm
     private static void DrawLine(ILockedFramebuffer framebuffer, int x1, int y1, int x2, int y2)
@@ -83,7 +128,7 @@ internal static class ImageProcessing
                     int y = y1 + offsetY;
                     if (x >= 0 && x < framebuffer.Size.Width && y >= 0 && y < framebuffer.Size.Height)
                     {
-                        SetPixel(framebuffer, x, y);
+                        SetPixel(framebuffer, x, y, 0, 255, 0, 255);
                     }
                 }
             }
@@ -108,12 +153,12 @@ internal static class ImageProcessing
         }
     }
 
-    private static void SetPixel(ILockedFramebuffer framebuffer, int x, int y)
+    private static void SetPixel(ILockedFramebuffer framebuffer, int x, int y, byte R, byte G, byte B, byte A)
     {
         var offset = y * framebuffer.RowBytes + x * 4;
-        Marshal.WriteByte(framebuffer.Address, offset, 0); // R
-        Marshal.WriteByte(framebuffer.Address, offset + 1, 255); // G
-        Marshal.WriteByte(framebuffer.Address, offset + 2, 0); // B
-        Marshal.WriteByte(framebuffer.Address, offset + 3, 255); // A
+        Marshal.WriteByte(framebuffer.Address, offset, R); // R
+        Marshal.WriteByte(framebuffer.Address, offset + 1, G); // G
+        Marshal.WriteByte(framebuffer.Address, offset + 2, B); // B
+        Marshal.WriteByte(framebuffer.Address, offset + 3, A); // A
     }
 }

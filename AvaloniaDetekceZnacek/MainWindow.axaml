@@ -6,12 +6,20 @@
         x:Class="AvaloniaDetekceZnacek.MainWindow"
         Title="AvaloniaDetekceZnacek">
 
-    <DockPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center">
-            <Button Margin="8" Content="Otevřít obrázek…" Click="OpenButton_Click" />
-        </StackPanel>
-        <Border Background="#202020" Margin="4">
-            <Image x:Name="ResultImage" Stretch="Uniform" />
-        </Border>
-    </DockPanel>
+
+    <Grid RowDefinitions="Auto, *" Margin="16" RowSpacing="12">
+
+
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,190,*" ColumnSpacing="16">
+            <Button x:Name="OpenButton" Grid.Column="0" Content="Nahrát obrázek" Click="OpenButton_Click" />
+
+            <TextBlock x:Name="StageLabel" Grid.Column="1" VerticalAlignment="Center" />
+
+            <Slider x:Name="StageSlider" Grid.Column="2" Minimum="0" Maximum="3" TickFrequency="1" IsSnapToTickEnabled="True" IsEnabled="False" VerticalAlignment="Center" ValueChanged="StageSlider_ValueChanged" />
+
+        </Grid>
+
+        <Image x:Name="ResultImage" Grid.Row="1" Stretch="Uniform" />
+
+    </Grid>
 </Window>
