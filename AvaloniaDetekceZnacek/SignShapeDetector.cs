@@ -6,7 +6,7 @@ internal static class SignShapeDetector
 {
     internal readonly record struct Point(int X, int Y);
 
-    public static List<List<Point>> FindOutlines(bool[] mask, int width, int height)
+    public static List<List<Point>> FindOutlines(byte[] mask, int width, int height)
     {
         var outlines = new List<List<Point>>();
         bool[] visited = new bool[mask.Length];
@@ -16,7 +16,7 @@ internal static class SignShapeDetector
 
         for (int start = 0; start < mask.Length; start++)
         {
-            if (!mask[start] || visited[start])
+            if (mask[start] == 0 || visited[start])
             {
                 continue;
             }
@@ -37,7 +37,7 @@ internal static class SignShapeDetector
         return outlines;
     }
 
-    private static List<int> FindRegion(int start, bool[] mask, bool[] visited, Queue<int> queue, int width, int height)
+    private static List<int> FindRegion(int start, byte[] mask, bool[] visited, Queue<int> queue, int width, int height)
     {
         var pixels = new List<int>();
         visited[start] = true;
@@ -62,7 +62,7 @@ internal static class SignShapeDetector
                     }
 
                     int neighbor = neighborY * width + neighborX;
-                    if (!mask[neighbor] || visited[neighbor])
+                    if (mask[neighbor] == 0 || visited[neighbor])
                     {
                         continue;
                     }
@@ -77,7 +77,7 @@ internal static class SignShapeDetector
     }
     
     // https://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain#Python
-    private static List<Point> ConvexHull(List<int> pixels, bool[] mask, int width, int height)
+    private static List<Point> ConvexHull(List<int> pixels, byte[] mask, int width, int height)
     {
         var points = new List<Point>();
         foreach (int pixel in pixels)
@@ -128,19 +128,19 @@ internal static class SignShapeDetector
         return lower;
     }
 
-    private static bool IsBoundary(bool[] mask, int pixel, int x, int y, int width, int height)
+    private static bool IsBoundary(byte[] mask, int pixel, int x, int y, int width, int height)
     {
         if (y == 0 || y == height - 1 || x == 0 || x == width - 1)
         {
             return true;
         }
 
-        if (!mask[pixel - width] || !mask[pixel + width] || !mask[pixel - 1])
+        if (mask[pixel - width] == 0 || mask[pixel + width] == 0 || mask[pixel - 1] == 0 || mask[pixel + 1] == 0)
         {
             return true;
         }
 
-        return !mask[pixel + 1];
+        return false;
     }
 
     private static int ComparePoints(Point first, Point second)

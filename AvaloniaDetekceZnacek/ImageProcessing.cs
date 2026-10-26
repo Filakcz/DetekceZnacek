@@ -23,8 +23,8 @@ internal static class ImageProcessing
         int height = image.PixelSize.Height;
         byte[] pixels = ReadPixels(image, width, height);
 
-        bool[] rawMask = SignSegmentation.CreateRawMask(pixels, width, height);
-        bool[] cleanMask = SignSegmentation.CreateCleanMask(rawMask, width, height);
+        byte[] rawMask = SignSegmentation.CreateRawMask(pixels, width, height);
+        byte[] cleanMask = SignSegmentation.CreateCleanMask(rawMask, width, height);
         var outlines = SignShapeDetector.FindOutlines(cleanMask, width, height);
 
         return new DetectionStages(
@@ -44,7 +44,7 @@ internal static class ImageProcessing
         return pixels;
     }
 
-    private static WriteableBitmap CreateMaskBitmap(bool[] mask, int width, int height)
+    private static WriteableBitmap CreateMaskBitmap(byte[] mask, int width, int height)
     {
         var bitmap = new WriteableBitmap(
             new PixelSize(width, height), new Vector(96, 96), PixelFormats.Bgra8888, AlphaFormat.Premul);
@@ -54,13 +54,21 @@ internal static class ImageProcessing
         {
             for (int x = 0; x < width; x++)
             {
-                if (mask[y * width + x])
+                if (mask[y * width + x] == 0)
                 {
-                    SetPixel(framebuffer, x, y, 255, 255, 255, 255);
+                    SetPixel(framebuffer, x, y, 0, 0, 0, 255);
+                }
+                else if (mask[y * width + x] == 1)
+                {
+                    SetPixel(framebuffer, x, y, 0, 0, 255, 255);
+                }
+                else if (mask[y * width + x] == 2)
+                {
+                    SetPixel(framebuffer, x, y, 255, 0, 0, 255);
                 }
                 else
                 {
-                    SetPixel(framebuffer, x, y, 0, 0, 0, 255);
+                    SetPixel(framebuffer, x, y, 0, 255, 255, 255);
                 }
             }
         }
@@ -153,12 +161,12 @@ internal static class ImageProcessing
         }
     }
 
-    private static void SetPixel(ILockedFramebuffer framebuffer, int x, int y, byte R, byte G, byte B, byte A)
+    private static void SetPixel(ILockedFramebuffer framebuffer, int x, int y, byte B, byte G, byte R, byte A)
     {
         var offset = y * framebuffer.RowBytes + x * 4;
-        Marshal.WriteByte(framebuffer.Address, offset, R); // R
+        Marshal.WriteByte(framebuffer.Address, offset, B); // B
         Marshal.WriteByte(framebuffer.Address, offset + 1, G); // G
-        Marshal.WriteByte(framebuffer.Address, offset + 2, B); // B
+        Marshal.WriteByte(framebuffer.Address, offset + 2, R); // R
         Marshal.WriteByte(framebuffer.Address, offset + 3, A); // A
     }
 }
