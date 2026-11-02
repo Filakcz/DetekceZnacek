@@ -62,7 +62,7 @@ internal static class SignShapeDetector
                     }
 
                     int neighbor = neighborY * width + neighborX;
-                    if (mask[neighbor] == 0 || visited[neighbor])
+                    if (mask[neighbor] != mask[start] || visited[neighbor])
                     {
                         continue;
                     }
@@ -135,7 +135,7 @@ internal static class SignShapeDetector
             return true;
         }
 
-        if (mask[pixel - width] == 0 || mask[pixel + width] == 0 || mask[pixel - 1] == 0 || mask[pixel + 1] == 0)
+        if (mask[pixel - width] != mask[pixel] || mask[pixel + width] != mask[pixel] || mask[pixel - 1] != mask[pixel] || mask[pixel + 1] != mask[pixel])
         {
             return true;
         }
