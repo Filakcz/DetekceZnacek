@@ -32,6 +32,23 @@ public partial class MainWindow : Window
 
 
         _stages = ImageProcessing.Process(bitmap);
+        CropPanel.Children.Clear();
+        for (int index = 0; index < _stages.Crops.Count; index++)
+        {
+            var region = _stages.Regions[index];
+            var card = new StackPanel { Spacing = 4, Width = 120 };
+            card.Children.Add(new Image
+            {
+                Source = _stages.Crops[index], Width = 120, Height = 105,
+                Stretch = Avalonia.Media.Stretch.Uniform
+            });
+            card.Children.Add(new TextBlock
+            {
+                Text = $"#{index + 1}: {region.Width}x{region.Height}",
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
+            });
+            CropPanel.Children.Add(card);
+        }
         StageSlider.Value = 0;
         StageSlider.IsEnabled = true;
         ShowStage(0);

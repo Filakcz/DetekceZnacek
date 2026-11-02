@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 
@@ -11,11 +12,14 @@ internal static class ImageProcessing
     // fakt musim udelat slozku na objekty
     // DetectionStages
     // Point
+    // regions
     internal sealed record DetectionStages(
             Bitmap Original,
             Bitmap RawMask,
             Bitmap CleanMask,
-            Bitmap Final);
+            Bitmap Final,
+            List<Bitmap> Crops,
+            List<SignShapeDetector.Region> Regions);
 
     public static DetectionStages Process(Bitmap image)
     {
@@ -25,13 +29,30 @@ internal static class ImageProcessing
 
         byte[] rawMask = SignSegmentation.CreateRawMask(pixels, width, height);
         byte[] cleanMask = SignSegmentation.CreateCleanMask(rawMask, width, height);
-        var outlines = SignShapeDetector.FindOutlines(cleanMask, width, height);
+        var regions = SignShapeDetector.FindOutlines(cleanMask, width, height);
 
         return new DetectionStages(
                 CreateBitmapCopy(image, width, height),
                 CreateMaskBitmap(rawMask, width, height),
                 CreateMaskBitmap(cleanMask, width, height),
-                CreateOutlinedBitmap(image, outlines));
+                CreateOutlinedBitmap(image, regions),
+                CreateCrops(image, regions),
+                regions);
+    }
+
+    private static List<Bitmap> CreateCrops(Bitmap image, List<SignShapeDetector.Region> regions)
+    {
+        var crops = new List<Bitmap>(regions.Count);
+        foreach (var region in regions)
+        {
+            var crop = new WriteableBitmap(new PixelSize(region.Width, region.Height), new Vector(96, 96),
+                PixelFormats.Bgra8888, AlphaFormat.Premul);
+            using var framebuffer = crop.Lock();
+            image.CopyPixels(new PixelRect(region.X, region.Y, region.Width, region.Height), framebuffer.Address,
+                framebuffer.RowBytes * region.Height, framebuffer.RowBytes);
+            crops.Add(crop);
+        }
+        return crops;
     }
 
     private static byte[] ReadPixels(Bitmap image, int width, int height)
@@ -76,7 +97,7 @@ internal static class ImageProcessing
         return bitmap;
     }
 
-    private static WriteableBitmap CreateOutlinedBitmap(Bitmap image, List<List<SignShapeDetector.Point>> outlines)
+    private static WriteableBitmap CreateOutlinedBitmap(Bitmap image, List<SignShapeDetector.Region> regions)
     {
         int width = image.PixelSize.Width;
         int height = image.PixelSize.Height;
@@ -85,8 +106,9 @@ internal static class ImageProcessing
 
         using var framebuffer = bitmap.Lock();
 
-        foreach (var outline in outlines)
+        foreach (var region in regions)
         {
+            var outline = region.Outline;
             for (int index = 0; index < outline.Count; index++)
             {
                 var start = outline[index];

@@ -5,10 +5,12 @@ namespace AvaloniaDetekceZnacek;
 internal static class SignShapeDetector
 {
     internal readonly record struct Point(int X, int Y);
+    internal readonly record struct Region(List<Point> Outline, int X, int Y, int Width, int Height);
+    // pridat jmeno regionu
 
-    public static List<List<Point>> FindOutlines(byte[] mask, int width, int height)
+    public static List<Region> FindOutlines(byte[] mask, int width, int height)
     {
-        var outlines = new List<List<Point>>();
+        var regions = new List<Region>();
         bool[] visited = new bool[mask.Length];
         Queue<int> queue = new Queue<int>();
         int minimumSize = System.Math.Max(80, mask.Length / 2000);
@@ -30,11 +32,52 @@ internal static class SignShapeDetector
             var outline = ConvexHull(regionPixels, mask, width, height);
             if (outline.Count >= 3)
             {
-                outlines.Add(outline);
+                int minX = width;
+                int minY = height;
+                int maxX = 0;
+                int maxY = 0;
+                foreach (int pixel in regionPixels)
+                {
+                    int x = pixel % width;
+                    int y = pixel / width;
+                    minX = System.Math.Min(minX, x);
+                    minY = System.Math.Min(minY, y);
+                    maxX = System.Math.Max(maxX, x);
+                    maxY = System.Math.Max(maxY, y);
+                }
+                regions.Add(new Region(outline, minX, minY, maxX - minX + 1, maxY - minY + 1));
             }
         }
 
-        return outlines;
+        var filtered = new List<Region>(regions.Count);
+        for (int i = 0; i < regions.Count; i++)
+        {
+            if (!IsNested(regions, i))
+            {
+                filtered.Add(regions[i]);
+            }
+        }
+        return filtered;
+    }
+
+    private static bool IsNested(List<Region> regions, int index)
+    {
+        var curr = regions[index];
+        int right = curr.X + curr.Width;
+        int bottom = curr.Y + curr.Height;
+        for (int i = 0; i < regions.Count; i++)
+        {
+            if (index == i)
+            {
+                continue;
+            }
+            var other = regions[i];
+            if (curr.X >= other.X && curr.Y >= other.Y && right <= other.X + other.Width && bottom <= other.Y + other.Height)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static List<int> FindRegion(int start, byte[] mask, bool[] visited, Queue<int> queue, int width, int height)
