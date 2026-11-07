@@ -13,7 +13,7 @@ internal static class SignShapeDetector
         var regions = new List<Region>();
         bool[] visited = new bool[mask.Length];
         Queue<int> queue = new Queue<int>();
-        int minimumSize = System.Math.Max(80, mask.Length / 2000);
+        int minimumSize = System.Math.Max(80, mask.Length / 5000);
         int maximumSize = mask.Length / 2;
 
         for (int start = 0; start < mask.Length; start++)

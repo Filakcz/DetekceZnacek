@@ -36,7 +36,7 @@ internal static class SignSegmentation
             {
                 mask[pixel] = 2;
             }
-            else if (hue >= 40 && hue <= 60 && saturation > 0.55f) 
+            else if (hue >= 37 && hue <= 60 && saturation > 0.55f) 
             {
                 mask[pixel] = 3;
             }

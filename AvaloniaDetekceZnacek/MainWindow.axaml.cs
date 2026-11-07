@@ -3,6 +3,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using System;
+using System.Collections.Generic;
 
 namespace AvaloniaDetekceZnacek;
 
@@ -11,6 +12,7 @@ public partial class MainWindow : Window
     public MainWindow() => InitializeComponent();
 
     private ImageProcessing.DetectionStages? _stages;
+    private List<CropClassifier.Example> _examples = new();
 
     private async void OpenButton_Click(object? sender, RoutedEventArgs e)
     {
@@ -25,7 +27,9 @@ public partial class MainWindow : Window
         });
 
         if (files.Count == 0)
+        {
             return;
+        }
 
         await using var stream = await files[0].OpenReadAsync();
         using var bitmap = new Bitmap(stream);
@@ -39,7 +43,7 @@ public partial class MainWindow : Window
             var card = new StackPanel { Spacing = 4, Width = 120 };
             card.Children.Add(new Image
             {
-                Source = _stages.Crops[index], Width = 120, Height = 105,
+                Source = _stages.Crops[index], Width = 120, Height = 120,
                 Stretch = Avalonia.Media.Stretch.Uniform
             });
             card.Children.Add(new TextBlock
@@ -49,9 +53,54 @@ public partial class MainWindow : Window
             });
             CropPanel.Children.Add(card);
         }
+        RefreshClassificationResults();
         StageSlider.Value = 0;
         StageSlider.IsEnabled = true;
         ShowStage(0);
+    }
+
+    private async void LoadExamplesButton_Click(object? sender, RoutedEventArgs e)
+    {
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Vyber složku se vzory",
+            AllowMultiple = false
+        });
+        if (folders.Count == 0)
+        {
+            return;
+        }
+
+        _examples = CropClassifier.LoadExamples(folders[0].Path.LocalPath);
+        RefreshClassificationResults();
+    }
+
+    private void RefreshClassificationResults()
+    {
+        ClassificationPanel.Children.Clear();
+        if (_stages is null)
+        {
+            return;
+        }
+        if (_examples.Count == 0)
+            return;
+
+        for (int i = 0; i < _stages.Crops.Count; i++)
+        {
+            var result = CropClassifier.Classify(_stages.Crops[i], _examples);
+            var row = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 14 };
+            row.Children.Add(new Image
+            {
+                Source = _stages.Crops[i], Width = 120, Height = 120,
+                Stretch = Avalonia.Media.Stretch.Uniform
+            });
+            row.Children.Add(new TextBlock
+            {
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Text = $"#{i + 1}\n Template matching: {result.TemplateLabel} ({result.TemplateSimilarity})\n HOG + k-NN: {result.KnnLabel} ({result.KnnDistance})"
+            });
+            ClassificationPanel.Children.Add(row);
+        }
     }
 
     private void ShowStage(int index)
