@@ -102,6 +102,17 @@ internal static class CropClassifier
             }
         }
 
+        string templateName = bestTemplate.Label;
+        if (bestTemplateDistance > 0.038)
+        {
+            templateName = "Pres prah";
+        }
+        if (bestDistances[0] > 2.5)
+        {
+            knnLabel = "Pres prah";
+        }
+
+
         return new Result(bestTemplate.Label, bestTemplateDistance, knnLabel, bestDistances[0]);
     }
 
@@ -183,7 +194,7 @@ internal static class CropClassifier
                 int cellY = y / CellSize;
                 int cellOfset = (cellY * cellsPerSide + cellX) * OrientationBins;
                 cellHistograms[lowerBin + cellOfset] += magnitude * lowerMagn;
-                cellHistograms[uperBin + cellOfset] += magnitude * lowerMagn;
+                cellHistograms[uperBin + cellOfset] += magnitude * upperMagn;
             }
         }
 
