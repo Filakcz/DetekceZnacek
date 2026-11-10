@@ -65,13 +65,18 @@ internal static class CropClassifier
         {
             double dist = EuclideanDistance(hog, examples[i].Hog);
             int j = 0; 
-            while (j < bestDistances.Count() && bestDistances[j] <= dist)
+            while (j < manyNearest && bestDistances[j] <= dist)
             {
                 j++;
             }
             
             if (j < manyNearest)
             {
+                for (int k = manyNearest - 1; k > j; k--)
+                {
+                    bestDistances[k] = bestDistances[k - 1];
+                    signs[k] = signs[k - 1];
+                }
                 bestDistances[j] = dist;
                 signs[j] = examples[i].Label;
             }
