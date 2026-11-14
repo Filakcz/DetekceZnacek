@@ -110,12 +110,12 @@ internal static class CropClassifier
         string templateName = bestTemplate.Label;
         bool templateOverThreshold = false;
         bool knnOverThreshold = false;
-        if (bestTemplateDistance > 0.03)
+        if (bestTemplateDistance > 0.035)
         {
             templateName = templateName.Insert(0, "Přes práh detekce! ");
             templateOverThreshold = true;
         }
-        if (bestDistances[0] > 2.5)
+        if (bestDistances[0] > 2.4)
         {
             knnLabel = knnLabel.Insert(0, "Přes práh detekce! ");
             knnOverThreshold = true;
