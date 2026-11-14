@@ -48,30 +48,11 @@ internal static class SignSegmentation
 
     public static byte[] CreateCleanMask(byte[] mask, int width, int height)
     {
-        bool[] foreground = new bool[mask.Length];
-
-        for (int i = 0; i < mask.Length; i++)
-        {
-            if (mask[i] != 0)
-            {
-                foreground[i] = true;
-            }
-        }
-
-        foreground = Erode(foreground, width, height);
-        foreground = Dilate(foreground, width, height);
-        foreground = Dilate(foreground, width, height);
-        foreground = Erode(foreground, width, height);
-
-        var result = new byte[mask.Length];
-
-        for (int i = 0; i < result.Length; i++)
-        {
-            if (foreground[i])
-            {
-                result[i] = mask[i];
-            }
-        }
+        byte[] result = new byte[mask.Length];
+        result = Erode(mask, width, height);
+        result = Dilate(result, width, height);
+        result = Dilate(result, width, height);
+        result = Erode(result, width, height);
 
         return result;
     }
@@ -103,38 +84,73 @@ internal static class SignSegmentation
         return hue;
     }
 
-    private static bool[] Erode(bool[] mask, int width, int height)
+    private static byte[] Erode(byte[] mask, int width, int height)
     {
         return ApplyMorphology(mask, width, height, true);
     }
 
-    private static bool[] Dilate(bool[] mask, int width, int height)
+    private static byte[] Dilate(byte[] mask, int width, int height)
     {
         return ApplyMorphology(mask, width, height, false);
     }
 
-    private static bool[] ApplyMorphology(bool[] mask, int width, int height, bool erode)
+    private static byte[] ApplyMorphology(byte[] mask, int width, int height, bool erode)
     {
-        var result = new bool[mask.Length];
+        byte[] result = new byte[mask.Length];
         for (int y = 1; y < height - 1; y++)
         {
             for (int x = 1; x < width - 1; x++)
             {
-                bool value = erode;
-                for (int dy = -1; dy <= 1 && value == erode; dy++)
+                int index = y * width + x;
+                byte current = mask[index];
+
+                if (erode)
                 {
-                    for (int dx = -1; dx <= 1; dx++)
+                    if (current == 0)
                     {
-                        var pixel = mask[(y + dy) * width + x + dx];
-                        if (pixel != erode)
+                        continue;
+                    }
+
+                    bool keep = true;
+                    for (int dy = -1; dy <= 1 && keep; dy++)
+                    {
+                        for (int dx = -1; dx <= 1; dx++)
                         {
-                            value = !erode;
-                            break;
+                            if (mask[(y + dy) * width + x + dx] != current)
+                            {
+                                keep = false;
+                                break;
+                            }
                         }
+                    }
+
+                    if (keep)
+                    {
+                        result[index] = current;
                     }
                 }
 
-                result[y * width + x] = value;
+                else
+                {
+                    if (current != 0)
+                    {
+                        result[index] = current;
+                        continue;
+                    }
+
+                    for (int dy = -1; dy <= 1 && result[index] == 0; dy++)
+                    {
+                        for (int dx = -1; dx <= 1; dx++)
+                        {
+                            byte neighbor = mask[(y + dy) * width + x + dx];
+                            if (neighbor != 0)
+                            {
+                                result[index] = neighbor;
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
 
