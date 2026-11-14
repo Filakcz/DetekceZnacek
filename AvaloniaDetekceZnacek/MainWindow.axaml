@@ -24,12 +24,9 @@
             </Grid>
         </TabItem>
         <TabItem Header="Klasifikace">
-            <Grid RowDefinitions="Auto,*" RowSpacing="10">
-                <Button Grid.Row="0" Content="Načíst vzory" Click="LoadExamplesButton_Click" />
-                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                    <StackPanel x:Name="ClassificationPanel" Spacing="10" />
-                </ScrollViewer>
-            </Grid>
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="ClassificationPanel" Spacing="10" />
+            </ScrollViewer>
         </TabItem>
     </TabControl>
 </Window>

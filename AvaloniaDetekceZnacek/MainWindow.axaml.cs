@@ -4,12 +4,20 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace AvaloniaDetekceZnacek;
 
 public partial class MainWindow : Window
 {
-    public MainWindow() => InitializeComponent();
+    public MainWindow()
+    {
+        InitializeComponent();
+
+
+        string examplesPath = Path.Combine(AppContext.BaseDirectory, "Vzory");
+        _examples = CropClassifier.LoadExamples(examplesPath);
+    }
 
     private ImageProcessing.DetectionStages? _stages;
     private List<CropClassifier.Example> _examples = new();
@@ -59,21 +67,6 @@ public partial class MainWindow : Window
         ShowStage(0);
     }
 
-    private async void LoadExamplesButton_Click(object? sender, RoutedEventArgs e)
-    {
-        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
-        {
-            Title = "Vyber složku se vzory",
-            AllowMultiple = false
-        });
-        if (folders.Count == 0)
-        {
-            return;
-        }
-
-        _examples = CropClassifier.LoadExamples(folders[0].Path.LocalPath);
-        RefreshClassificationResults();
-    }
 
     private void RefreshClassificationResults()
     {
