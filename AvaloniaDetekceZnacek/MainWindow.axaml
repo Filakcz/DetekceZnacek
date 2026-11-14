@@ -10,7 +10,7 @@
     <TabControl Margin="16">
         <TabItem Header="Detekce">
             <Grid RowDefinitions="Auto, *, Auto" RowSpacing="12">
-                <Grid Grid.Row="0" ColumnDefinitions="Auto,190,*" ColumnSpacing="16">
+                <Grid Grid.Row="0" ColumnDefinitions="Auto,250,*" ColumnSpacing="16">
                     <Button x:Name="OpenButton" Grid.Column="0" Content="Nahrát obrázek" Click="OpenButton_Click" />
                     <TextBlock x:Name="StageLabel" Grid.Column="1" VerticalAlignment="Center" />
 

@@ -19,7 +19,7 @@ internal static class CropClassifier
     private const int OrientationBins = 9; // 20 stupnu
 
     internal sealed record Example(string Label, double[] Template, double[] Hog);
-    internal sealed record Result(string TemplateLabel, double TemplateSimilarity, string KnnLabel, double KnnDistance);
+    internal sealed record Result(string TemplateLabel, double TemplateSimilarity, bool TemplateOverThreshold, string KnnLabel, double KnnDistance, bool KnnOverThreshold);
 
     public static List<Example> LoadExamples(string rootDirectory)
     {
@@ -108,17 +108,21 @@ internal static class CropClassifier
         }
 
         string templateName = bestTemplate.Label;
-        if (bestTemplateDistance > 0.038)
+        bool templateOverThreshold = false;
+        bool knnOverThreshold = false;
+        if (bestTemplateDistance > 0.03)
         {
-            templateName = "Pres prah";
+            templateName = templateName.Insert(0, "Přes práh detekce! ");
+            templateOverThreshold = true;
         }
         if (bestDistances[0] > 2.5)
         {
-            knnLabel = "Pres prah";
+            knnLabel = knnLabel.Insert(0, "Přes práh detekce! ");
+            knnOverThreshold = true;
         }
 
 
-        return new Result(bestTemplate.Label, bestTemplateDistance, knnLabel, bestDistances[0]);
+        return new Result(templateName, bestTemplateDistance, templateOverThreshold, knnLabel, bestDistances[0], knnOverThreshold);
     }
 
     private static double[] CreateGrayTemplate(Bitmap image)

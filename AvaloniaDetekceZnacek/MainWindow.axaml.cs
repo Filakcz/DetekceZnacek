@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
+using Avalonia.Controls.Documents;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -87,11 +88,20 @@ public partial class MainWindow : Window
                 Source = _stages.Crops[i], Width = 120, Height = 120,
                 Stretch = Avalonia.Media.Stretch.Uniform
             });
-            row.Children.Add(new TextBlock
+
+            var textBlo = new TextBlock { VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center };
+            textBlo.Inlines!.Add(new Run($"#{i + 1}\n"));
+            textBlo.Inlines.Add(new Run($"Template matching: {result.TemplateLabel} ({result.TemplateSimilarity})\n")
             {
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Text = $"#{i + 1}\n Template matching: {result.TemplateLabel} ({result.TemplateSimilarity})\n HOG + k-NN: {result.KnnLabel} ({result.KnnDistance})"
+                Foreground = result.TemplateOverThreshold ? Avalonia.Media.Brushes.Red : Avalonia.Media.Brushes.Green
             });
+            textBlo.Inlines.Add(new Run($"HOG + k-NN: {result.KnnLabel} ({result.KnnDistance})")
+            {
+                Foreground = result.KnnOverThreshold ? Avalonia.Media.Brushes.Red : Avalonia.Media.Brushes.Green
+            });
+
+            row.Children.Add(textBlo);
+
             ClassificationPanel.Children.Add(row);
         }
     }
@@ -106,22 +116,22 @@ public partial class MainWindow : Window
         if (index == 0)
         {
             ResultImage.Source = _stages.Original;
-            StageLabel.Text = "Puvodni";
+            StageLabel.Text = "Původní obrázek";
         }
         else if (index == 1)
         {
             ResultImage.Source = _stages.RawMask;
-            StageLabel.Text = "Maska";
+            StageLabel.Text = "Maska obrázku";
         }
         else if (index == 2)
         {
             ResultImage.Source = _stages.CleanMask;
-            StageLabel.Text = "Maska po morfo";
+            StageLabel.Text = "Maska po morfologických úpravách";
         }
         else
         {
             ResultImage.Source = _stages.Final;
-            StageLabel.Text = "Finalni obrys";
+            StageLabel.Text = "Označení potenciálních značek";
         }
     }
 
