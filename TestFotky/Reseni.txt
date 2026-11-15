@@ -11,3 +11,4 @@
 11=nerovnost
 12=pozor_prechod_chodci;rychlost50
 13=
+14=stop

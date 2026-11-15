@@ -222,12 +222,14 @@ public partial class MainWindow : Window
             for (int i = 0; i < stages.Crops.Count; i++)
             {
                 var result = CropClassifier.Classify(stages.Crops[i], _examples);
-                bool correct = !result.KnnOverThreshold && remainingExpected.Remove(result.KnnLabel);
-                details.Children.Add(new TextBlock
+                if (!result.KnnOverThreshold)
                 {
-                    Text = $"Detekce #{i + 1}: {result.KnnLabel}",
-                    Foreground = correct ? Avalonia.Media.Brushes.Green : Avalonia.Media.Brushes.Red
-                });
+                    details.Children.Add(new TextBlock
+                    {
+                        Text = $"Detekce #{i + 1}: {result.KnnLabel}",
+                        Foreground = remainingExpected.Remove(result.KnnLabel) ? Avalonia.Media.Brushes.Green : Avalonia.Media.Brushes.Red
+                    });
+                }
             }
             foreach (string missing in remainingExpected)
             {
