@@ -6,7 +6,8 @@
 6=zakaz_zastaveni
 7=zakaz_vjezdu
 8=slepa;parkovani
-9=zakaz_odboceni_vpravo;zakaz_zastaveni;jednosmerka
+9=zakaz_odboceni_vpravo;zakaz_zastaveni;jednosmerka;parkovani
 10=zakaz_odboceni_vpravo;hlavni;parkovani;jednosmerka;stezka_cyklisti;zakaz_zastaveni
 11=nerovnost
 12=pozor_prechod_chodci;rychlost50
+13=

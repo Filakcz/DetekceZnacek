@@ -139,4 +139,107 @@ public partial class MainWindow : Window
     {
         ShowStage((int)Math.Round(e.NewValue));
     }
+
+    private async void TestFolderButton_Click(object? sender, RoutedEventArgs e)
+    {
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Vyber složku s obrázky a Reseni.txt",
+            AllowMultiple = false
+        });
+
+        if (folders.Count == 0)
+        {
+            return;
+        }
+
+        string? folderPath = folders[0].TryGetLocalPath();
+
+        if (string.IsNullOrWhiteSpace(folderPath))
+        {
+            TestFolderLabel.Text = "Složku se nepodařilo otevřít.";
+            return;
+        }
+
+        TestFolderLabel.Text = folderPath;
+        TestResultsPanel.Children.Clear();
+
+        string solutionPath = Path.Combine(folderPath, "Reseni.txt");
+        if (!File.Exists(solutionPath))
+        {
+            TestResultsPanel.Children.Add(new TextBlock { Text = "Ve složce chybí Reseni.txt.", Foreground = Avalonia.Media.Brushes.Red });
+            return;
+        }
+
+        var solutions = new Dictionary<string, HashSet<string>>();
+        foreach (string line in File.ReadAllLines(solutionPath))
+        {
+            string[] parts = line.Split('=');
+            HashSet<string> values = new HashSet<string>();
+
+            string[] signs = parts[1].Split(';');
+
+            foreach (string sign in signs)
+            {
+                if (!string.IsNullOrWhiteSpace(sign))
+                {
+                    values.Add(sign);
+                }
+            }
+
+            solutions[parts[0]] = values;
+        }
+
+        List<string> imageFiles = new List<string>();
+        HashSet<string> extensions = new HashSet<string> { ".png", ".jpg", ".jpeg", ".bmp"};
+        
+        foreach (string path in Directory.GetFiles(folderPath))
+        {
+            if (extensions.Contains(Path.GetExtension(path)))
+            {
+                imageFiles.Add(path);
+            }
+        }
+
+        foreach (string imagePath in imageFiles)
+        {
+            string imageNumber = Path.GetFileNameWithoutExtension(imagePath);
+            StackPanel section = new StackPanel { Spacing = 6 };
+            section.Children.Add(new TextBlock { Text = $"Obrázek {imageNumber}", FontSize = 18, FontWeight = Avalonia.Media.FontWeight.Bold });
+            if (!solutions.TryGetValue(imageNumber, out var expected))
+            {
+                section.Children.Add(new TextBlock { Text = "Pro obrázek není v Reseni.txt řešení.", Foreground = Avalonia.Media.Brushes.Red });
+                TestResultsPanel.Children.Add(section);
+                continue;
+            }
+
+            using var bitmap = new Bitmap(imagePath);
+            var stages = ImageProcessing.Process(bitmap);
+            var imageRow = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 12 };
+            imageRow.Children.Add(new Image { Source = stages.Final, Width = 240, Height = 160, Stretch = Avalonia.Media.Stretch.Uniform });
+            var details = new StackPanel { Spacing = 4, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center };
+            HashSet<string> remainingExpected = new HashSet<string>(expected);
+            for (int i = 0; i < stages.Crops.Count; i++)
+            {
+                var result = CropClassifier.Classify(stages.Crops[i], _examples);
+                bool correct = !result.KnnOverThreshold && remainingExpected.Remove(result.KnnLabel);
+                details.Children.Add(new TextBlock
+                {
+                    Text = $"Detekce #{i + 1}: {result.KnnLabel}",
+                    Foreground = correct ? Avalonia.Media.Brushes.Green : Avalonia.Media.Brushes.Red
+                });
+            }
+            foreach (string missing in remainingExpected)
+            {
+                details.Children.Add(new TextBlock { Text = $"Chybí: {missing}", Foreground = Avalonia.Media.Brushes.Red });
+            }
+            if (stages.Crops.Count == 0 && expected.Count == 0)
+            {
+                details.Children.Add(new TextBlock { Text = "Správně: žádné značky", Foreground = Avalonia.Media.Brushes.Green });
+            }
+            imageRow.Children.Add(details);
+            section.Children.Add(imageRow);
+            TestResultsPanel.Children.Add(section);
+        }
+    }
 }

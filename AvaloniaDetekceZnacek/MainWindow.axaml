@@ -28,5 +28,16 @@
                 <StackPanel x:Name="ClassificationPanel" Spacing="10" />
             </ScrollViewer>
         </TabItem>
+        <TabItem Header="Test složky">
+            <Grid RowDefinitions="Auto,*" RowSpacing="12">
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12">
+                    <Button Content="Nahrát složku" Click="TestFolderButton_Click" />
+                    <TextBlock x:Name="TestFolderLabel" VerticalAlignment="Center" />
+                </StackPanel>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="TestResultsPanel" Spacing="14" />
+                </ScrollViewer>
+            </Grid>
+        </TabItem>
     </TabControl>
 </Window>

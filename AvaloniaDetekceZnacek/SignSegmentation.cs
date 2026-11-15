@@ -6,13 +6,35 @@ internal static class SignSegmentation
 {
     public static byte[] CreateRawMask(byte[] pixels, int width, int height)
     {
-        byte[] mask = new byte[width * height];
+        byte[] mask = new byte[width * height]; 
+        // greyworld algorithm - korekce barev
+        double sumB = 0;
+        double sumG = 0;
+        double sumR = 0;
+        for (int i = 0; i < pixels.Length; i += 4)
+        { 
+            sumB += pixels[i];
+            sumG += pixels[i + 1];
+            sumR += pixels[i + 2];
+        }
+        double avgB = Math.Max(sumB / mask.Length, 1);
+        double avgG = Math.Max(sumG / mask.Length, 1);
+        double avgR = Math.Max(sumR / mask.Length, 1);
+        double avg = (avgB + avgG + avgR) / 3;
+        float gB = (float)Math.Clamp(avg / avgB, 0.6, 1.6);
+        float gG = (float)Math.Clamp(avg / avgG, 0.6, 1.6);
+        float gR = (float)Math.Clamp(avg / avgR, 0.6, 1.6);
+
+
         for (var pixel = 0; pixel < mask.Length; pixel++)
         {
             int offset = pixel * 4;
-            float blue = pixels[offset] / 255f;
-            float green = pixels[offset + 1] / 255f;
-            float red = pixels[offset + 2] / 255f;
+            float blue  = Math.Min(1f, pixels[offset]     / 255f * gB);
+            float green = Math.Min(1f, pixels[offset + 1] / 255f * gG);
+            float red   = Math.Min(1f, pixels[offset + 2] / 255f * gR);
+            // float blue = pixels[offset] / 255f;
+            // float green = pixels[offset + 1] / 255f;
+            // float red = pixels[offset + 2] / 255f;
             float max = Math.Max(red, Math.Max(green, blue));
             float min = Math.Min(red, Math.Min(green, blue));
             float delta = max - min;
@@ -23,20 +45,20 @@ internal static class SignSegmentation
                 saturation = delta / max;
             }
 
-            if (max <= 0.25f || saturation < 0.4f)
+            if (max <= 0.25f || saturation < 0.35f)
             {
                 continue;
             }
 
-            if (hue < 12 || hue > 345)
+            if (hue < 12 || hue > 320)
             {
                 mask[pixel] = 1;
             }
-            else if (hue >= 190 && hue <= 255)
+            else if (hue >= 200 && hue <= 250)
             {
                 mask[pixel] = 2;
             }
-            else if (hue >= 37 && hue <= 70 && saturation > 0.55f) 
+            else if (hue >= 35 && hue <= 70 && saturation > 0.55f) 
             {
                 mask[pixel] = 3;
             }
