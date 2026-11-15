@@ -1,0 +1,12 @@
+1=svetelne_signaly
+2=prikaz_jed_rovne
+3=jednosmerka;zakaz_zastaveni;stezka_cyklisti;parkovani
+4=kruhac;prednost
+5=hlavni;prechod_chodci;zakaz_odboceni_vlevo
+6=zakaz_zastaveni
+7=zakaz_vjezdu
+8=slepa;parkovani
+9=zakaz_odboceni_vpravo;zakaz_zastaveni;jednosmerka
+10=zakaz_odboceni_vpravo;hlavni;parkovani;jednosmerka;stezka_cyklisti;zakaz_zastaveni
+11=nerovnost
+12=pozor_prechod_chodci;rychlost50
