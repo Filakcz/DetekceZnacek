@@ -38,7 +38,6 @@ internal static class SignSegmentation
             float max = Math.Max(red, Math.Max(green, blue));
             float min = Math.Min(red, Math.Min(green, blue));
             float delta = max - min;
-            float hue = GetHue(red, green, blue, max, delta);
             float saturation = 0;
             if (max != 0)
             {
@@ -49,6 +48,8 @@ internal static class SignSegmentation
             {
                 continue;
             }
+
+            float hue = GetHue(red, green, blue, max, delta);
 
             if (hue < 12 || hue > 320)
             {

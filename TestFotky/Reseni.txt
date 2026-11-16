@@ -12,3 +12,4 @@
 12=pozor_prechod_chodci;rychlost50
 13=
 14=stop
+15=prechod_chodci;zakaz_zastaveni
