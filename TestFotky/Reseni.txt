@@ -1,6 +1,6 @@
 1=svetelne_signaly
 2=prikaz_jed_rovne
-3=jednosmerka;zakaz_zastaveni;stezka_cyklisti;parkovani
+3=jednosmerka;zakaz_zastaveni;stezka_cyklisti;parkovani;parkovani
 4=kruhac;prednost
 5=hlavni;prechod_chodci;zakaz_odboceni_vlevo
 6=zakaz_zastaveni

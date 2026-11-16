@@ -115,7 +115,7 @@ internal static class CropClassifier
             templateName = templateName.Insert(0, "Přes práh detekce! ");
             templateOverThreshold = true;
         }
-        if (bestDistances[0] > 1.8)
+        if (bestDistances[0] > 1.85)
         {
             knnLabel = knnLabel.Insert(0, "Přes práh detekce! ");
             knnOverThreshold = true;
@@ -148,6 +148,38 @@ internal static class CropClassifier
                 result[y * SampleSize + x] = (0.114 * pixels[offset] + 0.587 * pixels[offset + 1] + 0.299 * pixels[offset + 2]);
             }
         }
+
+        // box blur
+        double[] filtered = new double[result.Length];
+        for (int y = 0; y < SampleSize; y++)
+        {
+            for (int x = 0; x < SampleSize; x++)
+            {
+                double sum = 0;
+                int count = 0;
+                for (int dy = -1; dy <= 1; dy++)
+                {
+                    int sampleY = y + dy;
+                    if (sampleY < 0 || sampleY >= SampleSize)
+                    {
+                        continue;
+                    }
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        int sampleX = x + dx;
+                        if (sampleX < 0 || sampleX >= SampleSize)
+                        {
+                            continue;
+                        }
+                        sum += result[sampleY * SampleSize + sampleX];
+                        count++;
+                    }
+                }
+                filtered[y * SampleSize + x] = sum / count;
+            }
+        }
+
+        result = filtered;
 
         // https://en.wikipedia.org/wiki/Cross-correlation#Zero-normalized_cross-correlation_(ZNCC)
         double avg = result.Average();

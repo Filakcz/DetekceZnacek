@@ -226,7 +226,7 @@ public partial class MainWindow : Window
                 {
                     details.Children.Add(new TextBlock
                     {
-                        Text = $"Detekce #{i + 1}: {result.KnnLabel}",
+                        Text = $"Detekce #{i + 1}: {result.KnnLabel} (template: {result.TemplateLabel})",
                         Foreground = remainingExpected.Remove(result.KnnLabel) ? Avalonia.Media.Brushes.Green : Avalonia.Media.Brushes.Red
                     });
                 }
