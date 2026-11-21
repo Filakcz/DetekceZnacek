@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System;
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 
@@ -68,7 +68,7 @@ internal static class ImageProcessing
             var crop = new WriteableBitmap(new PixelSize(region.Width, region.Height), new Vector(96, 96),
                 PixelFormats.Bgra8888, AlphaFormat.Premul);
             using var framebuffer = crop.Lock();
-            image.CopyPixels(new PixelRect(region.X, region.Y, region.Width, region.Height), framebuffer.Address,
+            CopyBgra(image, new PixelRect(region.X, region.Y, region.Width, region.Height), framebuffer.Address,
                 framebuffer.RowBytes * region.Height, framebuffer.RowBytes);
             crops.Add(crop);
         }
@@ -80,7 +80,7 @@ internal static class ImageProcessing
         var widthBytes = width * 4;
         var pixels = new byte[widthBytes * height];
         var handle = GCHandle.Alloc(pixels, GCHandleType.Pinned);
-        image.CopyPixels(new PixelRect(0, 0, width, height), handle.AddrOfPinnedObject(), pixels.Length, widthBytes);
+        CopyBgra(image, new PixelRect(0, 0, width, height), handle.AddrOfPinnedObject(), pixels.Length, widthBytes);
         handle.Free();
         return pixels;
     }
@@ -137,7 +137,7 @@ internal static class ImageProcessing
         var bitmap = new WriteableBitmap(
             new PixelSize(width, height), new Vector(96, 96), PixelFormats.Bgra8888, AlphaFormat.Premul);
         using var framebuffer = bitmap.Lock();
-        image.CopyPixels(new PixelRect(0, 0, width, height), framebuffer.Address,
+        CopyBgra(image, new PixelRect(0, 0, width, height), framebuffer.Address,
             framebuffer.RowBytes * height, framebuffer.RowBytes);
         return bitmap;
     }
@@ -203,5 +203,27 @@ internal static class ImageProcessing
         Marshal.WriteByte(framebuffer.Address, offset + 1, G); // G
         Marshal.WriteByte(framebuffer.Address, offset + 2, R); // R
         Marshal.WriteByte(framebuffer.Address, offset + 3, A); // A
+    }
+
+    private static void CopyBgra(Bitmap image, PixelRect rect, IntPtr buffer, int bufferSize, int stride)
+    {
+        image.CopyPixels(rect, buffer, bufferSize, stride);
+
+        if (image.Format != null && image.Format.Equals(PixelFormats.Rgba8888))
+        {
+            byte[] row = new byte[rect.Width * 4];
+            for (int y = 0; y < rect.Height; y++)
+            {
+                IntPtr rowPtr = buffer + y * stride;
+                Marshal.Copy(rowPtr, row, 0, row.Length);
+                for (int i = 0; i < row.Length; i += 4)
+                {
+                    byte temp = row[i];
+                    row[i] = row[i + 2];
+                    row[i + 2] = temp;
+                }
+                Marshal.Copy(row, 0, rowPtr, row.Length);
+            }
+        }
     }
 }
