@@ -5,8 +5,8 @@
 [![Avalonia](https://img.shields.io/badge/Made%20with-Avalonia-00a2ed?style=for-the-badge)](https://avaloniaui.net/)
 
 
-**Detekce dopravních značek** pomocí:
-- Template matching s metodou RMSE/TM_CCOEFF_NORMED
+**Detekce a rozpoznávání dopravních značek** pomocí:
+- Template matching s metodou RMSE/ZNCC
 - Histogram orientovaných gradientů s k-NN
 
 ![Screenshot](Screenshot/screenshot.png)
