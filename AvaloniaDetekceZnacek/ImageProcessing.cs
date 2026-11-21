@@ -21,6 +21,26 @@ internal static class ImageProcessing
             List<Bitmap> Crops,
             List<SignShapeDetector.Region> Regions);
 
+    internal sealed record Detection(
+            Bitmap Final,
+            List<Bitmap> Crops
+            );
+
+    public static Detection SimpleProcess(Bitmap image)
+    {
+        int width = image.PixelSize.Width;
+        int height = image.PixelSize.Height;
+        byte[] pixels = ReadPixels(image, width, height);
+    
+        byte[] mask = SignSegmentation.CreateCleanMask(SignSegmentation.CreateRawMask(pixels, width, height), width, height);
+        var regions = SignShapeDetector.FindOutlines(mask, width, height);
+
+        return new Detection(
+                CreateOutlinedBitmap(image, regions),
+                CreateCrops(image, regions)
+                );
+    }
+
     public static DetectionStages Process(Bitmap image)
     {
         int width = image.PixelSize.Width;
@@ -67,31 +87,24 @@ internal static class ImageProcessing
 
     private static WriteableBitmap CreateMaskBitmap(byte[] mask, int width, int height)
     {
+        int[] palette = {
+        unchecked((int)0xFF000000), // 0 cerna
+        unchecked((int)0xFFFF0000), // 1 cervena 
+        unchecked((int)0xFF0000FF), // 2 modra
+        unchecked((int)0xFFFFFF00)}; // 3 zluta
+
         var bitmap = new WriteableBitmap(
             new PixelSize(width, height), new Vector(96, 96), PixelFormats.Bgra8888, AlphaFormat.Premul);
         using var framebuffer = bitmap.Lock();
-
+        int[] row = new int[width];
         for (int y = 0; y < height; y++)
         {
+            int offset = y * width; 
             for (int x = 0; x < width; x++)
             {
-                if (mask[y * width + x] == 0)
-                {
-                    SetPixel(framebuffer, x, y, 0, 0, 0, 255);
-                }
-                else if (mask[y * width + x] == 1)
-                {
-                    SetPixel(framebuffer, x, y, 0, 0, 255, 255);
-                }
-                else if (mask[y * width + x] == 2)
-                {
-                    SetPixel(framebuffer, x, y, 255, 0, 0, 255);
-                }
-                else
-                {
-                    SetPixel(framebuffer, x, y, 0, 255, 255, 255);
-                }
+                row[x] = palette[mask[offset + x]];
             }
+            Marshal.Copy(row, 0, framebuffer.Address + y * framebuffer.RowBytes, width);
         }
 
         return bitmap;

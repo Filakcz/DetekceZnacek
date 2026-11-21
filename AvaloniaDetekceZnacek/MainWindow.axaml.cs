@@ -148,6 +148,8 @@ public partial class MainWindow : Window
             AllowMultiple = false
         });
 
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
         if (folders.Count == 0)
         {
             return;
@@ -161,9 +163,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        TestFolderLabel.Text = folderPath;
         TestResultsPanel.Children.Clear();
-
         string solutionPath = Path.Combine(folderPath, "Reseni.txt");
         if (!File.Exists(solutionPath))
         {
@@ -171,11 +171,11 @@ public partial class MainWindow : Window
             return;
         }
 
-        var solutions = new Dictionary<string, HashSet<string>>();
+        var solutions = new Dictionary<string, List<string>>();
         foreach (string line in File.ReadAllLines(solutionPath))
         {
             string[] parts = line.Split('=');
-            HashSet<string> values = new HashSet<string>();
+            List<string> values = new List<string>();
 
             string[] signs = parts[1].Split(';');
 
@@ -207,21 +207,20 @@ public partial class MainWindow : Window
             StackPanel section = new StackPanel { Spacing = 6 };
             section.Children.Add(new TextBlock { Text = $"Obrázek {imageNumber}", FontSize = 18, FontWeight = Avalonia.Media.FontWeight.Bold });
             if (!solutions.TryGetValue(imageNumber, out var expected))
-            {
-                section.Children.Add(new TextBlock { Text = "Pro obrázek není v Reseni.txt řešení.", Foreground = Avalonia.Media.Brushes.Red });
+            { section.Children.Add(new TextBlock { Text = "Pro obrázek není v Reseni.txt řešení.", Foreground = Avalonia.Media.Brushes.Red });
                 TestResultsPanel.Children.Add(section);
                 continue;
             }
 
             using var bitmap = new Bitmap(imagePath);
-            var stages = ImageProcessing.Process(bitmap);
+            var detection = ImageProcessing.SimpleProcess(bitmap);
             var imageRow = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 12 };
-            imageRow.Children.Add(new Image { Source = stages.Final, Width = 240, Height = 160, Stretch = Avalonia.Media.Stretch.Uniform });
+            imageRow.Children.Add(new Image { Source = detection.Final, Width = 240, Height = 160, Stretch = Avalonia.Media.Stretch.Uniform });
             var details = new StackPanel { Spacing = 4, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center };
-            HashSet<string> remainingExpected = new HashSet<string>(expected);
-            for (int i = 0; i < stages.Crops.Count; i++)
+            List<string> remainingExpected = new List<string>(expected);
+            for (int i = 0; i < detection.Crops.Count; i++)
             {
-                var result = CropClassifier.Classify(stages.Crops[i], _examples);
+                var result = CropClassifier.Classify(detection.Crops[i], _examples);
                 if (!result.KnnOverThreshold)
                 {
                     details.Children.Add(new TextBlock
@@ -235,7 +234,7 @@ public partial class MainWindow : Window
             {
                 details.Children.Add(new TextBlock { Text = $"Chybí: {missing}", Foreground = Avalonia.Media.Brushes.Red });
             }
-            if (stages.Crops.Count == 0 && expected.Count == 0)
+            if (detection.Crops.Count == 0 && expected.Count == 0)
             {
                 details.Children.Add(new TextBlock { Text = "Správně: žádné značky", Foreground = Avalonia.Media.Brushes.Green });
             }
@@ -243,5 +242,8 @@ public partial class MainWindow : Window
             section.Children.Add(imageRow);
             TestResultsPanel.Children.Add(section);
         }
+
+
+        TestFolderLabel.Text = $"{folderPath} - {sw.ElapsedMilliseconds} ms";
     }
 }
